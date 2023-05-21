@@ -1,6 +1,4 @@
-import random
 import torch
-import math
 import torch.nn.functional as F
 
 NR_OF_CARDS = 100
@@ -13,9 +11,6 @@ EPOCHS = 100
 
 class ClashRoyaleNet(torch.nn.Module):
     def __init__(self):
-        """
-        In the constructor we instantiate five parameters and assign them as members.
-        """
         super().__init__()
         self.nr_of_cards = NR_OF_CARDS
         self.nr_of_ranking_buckes = NR_OF_BUCKETS
@@ -116,7 +111,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
 loss = 0
 for t in range(EPOCHS):
-    # Forward pass: Compute predicted y by passing x to the model
+    # Forward pass
     deck_with_card_removed, missing_card, deck_encoding, ranking_encoding = model(cards, rankings)
 
     # Compute and print loss
