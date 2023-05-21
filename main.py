@@ -1,13 +1,13 @@
 import torch
 import torch.nn.functional as F
 
-NR_OF_CARDS = 100
-NR_OF_BUCKETS = 10
-NR_OF_CARDS_PER_DECK = 8
+NR_OF_CARDS = 1
+NR_OF_BUCKETS = 1
+NR_OF_CARDS_PER_DECK = 4
 ENCODER_DIM = 3
-DENSE_NEURONS = 128
-LEARNING_RATE = 1e-8
-EPOCHS = 100
+DENSE_NEURONS = 16
+LEARNING_RATE = 1e-6
+EPOCHS = 1000
 
 class ClashRoyaleNet(torch.nn.Module):
     def __init__(self):
@@ -63,11 +63,11 @@ class ClashRoyaleNet(torch.nn.Module):
 
         deck_one_hot = torch.zeros((batch_size, self.input_size), dtype=torch.float32)
         # -> (batch_size, input_size)
-        deck_one_hot[cards] = 1.0
+        deck_one_hot[:, cards] = 1.0
         # -> (batch_size, input_size)
         deck_encoding: torch.Tensor = self.encoding_layer(deck_one_hot)
         # -> (batch_size, encoding_size)
-        deck_encoding = deck_encoding.repeat(1, self.nr_of_cards_per_deck).view((batch_size * self.nr_of_cards_per_deck, self.encoding_size))
+        deck_encoding_repeat = deck_encoding.repeat(self.nr_of_cards_per_deck, 1).view((batch_size * self.nr_of_cards_per_deck, self.encoding_size))
         # -> (batch_size * nr_of_cards_per_deck, encoding_size)
 
         offset_ranking = ranking.add(self.nr_of_cards)
@@ -76,13 +76,13 @@ class ClashRoyaleNet(torch.nn.Module):
         # -> (batch_size, 1, input_size)
         ranking_one_hot = ranking_one_hot.view((batch_size, self.input_size)).float()
         # -> (batch_size, input_size)
-        ranking_encoding = self.encoding_layer(ranking_one_hot)
+        ranking_encoding: torch.Tensor = self.encoding_layer(ranking_one_hot)
         # -> (batch_size, encoding_size)
-        ranking_encoding = ranking_encoding.repeat(1, self.nr_of_cards_per_deck).view((batch_size * self.nr_of_cards_per_deck, self.encoding_size))
+        # ranking_encoding = ranking_encoding.repeat(self.nr_of_cards_per_deck, 1).view((batch_size * self.nr_of_cards_per_deck, self.encoding_size))
         # -> (batch_size * nr_of_cards_per_deck, encoding_size)
 
         # ========================================================================
-        deck_with_cards_removed = deck_encoding.subtract(target_cards_encoding)
+        deck_with_cards_removed = deck_encoding_repeat.subtract(target_cards_encoding)
         # -> (batch_size * nr_of_cards_per_deck, encoding_size)
         deck_with_cards_removed = self.dense_layer_1(deck_with_cards_removed)
         deck_with_cards_removed = F.tanh(deck_with_cards_removed)
@@ -91,18 +91,22 @@ class ClashRoyaleNet(torch.nn.Module):
         deck_with_cards_removed = F.tanh(deck_with_cards_removed)
         # -> (batch_size * nr_of_cards_per_deck, nr_of_neurons_per_dense)
         deck_with_cards_removed = self.classifier_layer(deck_with_cards_removed)
-        deck_with_cards_removed_softmax = F.softmax(deck_with_cards_removed)
+        deck_with_cards_removed_softmax = F.softmax(deck_with_cards_removed, dim = 1)
         # -> (batch_size * nr_of_cards_per_deck, input_size)
 
         return deck_with_cards_removed_softmax, target_cards_softmax, deck_encoding, ranking_encoding
     
     def compute_loss(self, deck_with_card_removed, missing_card, deck_encoding, ranking_encoding):
         loss = 0.0
-        loss += self.missing_card_recovery_loss(deck_with_card_removed, missing_card)
+        loss += self.missing_card_recovery_loss(deck_with_card_removed, missing_card)/self.nr_of_cards_per_deck
         loss += self.deck_similarity_to_ranking_loss(deck_encoding, ranking_encoding)
         return loss
 
-batch_size = 100
+    def get_encoding(self, card_idx):
+        card_encoding: torch.Tensor = self.encoding_layer.weight[:, card_idx]
+        return card_encoding.detach().numpy()
+
+batch_size = 1
 cards = torch.randint(0, NR_OF_CARDS, (batch_size, NR_OF_CARDS_PER_DECK))
 rankings = torch.randint(0, NR_OF_BUCKETS, (batch_size, 1))
 
