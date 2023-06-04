@@ -1,6 +1,8 @@
 import torch
 import torch.nn.functional as F
 
+from src.clash_royal_api import ClashRoyaleAPI
+
 NR_OF_CARDS = 10
 NR_OF_BUCKETS = 1
 NR_OF_CARDS_PER_DECK = 4
@@ -118,6 +120,10 @@ class ClashRoyaleNet(torch.nn.Module):
 batch_size = 1
 cards = torch.randint(0, NR_OF_CARDS, (batch_size, NR_OF_CARDS_PER_DECK))
 rankings = torch.randint(0, NR_OF_BUCKETS, (batch_size, 1))
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CLASH ROYALE API :) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+api = ClashRoyaleAPI()
+decks = api.get_top_players_decks()
 
 model = ClashRoyaleNet()
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
