@@ -168,6 +168,6 @@ class ClashRoyaleAPI():
 
 if __name__ == '__main__':
     api = ClashRoyaleAPI()
-    decks = api.read_player_decks('test.json')
+    decks = api.read_player_decks('big_cards_data.json')
     adj_matrix = api.get_adjacency_matrix_for_decks(decks)
-    # api.store_player_decks('test.json')
+    # api.store_player_decks('big_cards_data.json')
