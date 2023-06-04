@@ -1,12 +1,16 @@
 import urllib.request as rq
+import itertools as it
+import numpy as np
+import json
 
 from bs4 import BeautifulSoup
 from enum import Enum
-from typing import Any
+from typing import Any, List
 from requests import get
 from card import Card
 from deck import Deck, filter_duplicated_decks
 from data.api_constants import API_TOKEN, STATS_API_URL, API_URL, MAX_PLAYERS, MAX_CARDS, SEASON
+from data.data_parser import get_file_path
 
 # ----------------------- INLINE METHODS --------------------------------
 GET_PLAYER_ID = lambda player: player['tag'].replace('#', '%23')
@@ -73,7 +77,7 @@ class ClashRoyaleAPI():
         decks = [self.handle_request(ApiRequests.GET_PLAYER_CARDS, player) for player in list(players.keys())]
         unique_decks = filter_duplicated_decks(decks)
         
-        return [Deck(card_ids, self.cards, idx) for idx, card_ids in unique_decks.items() if len(card_ids) > 0]
+        return [Deck.from_card_ids(card_ids, self.cards, idx) for idx, card_ids in unique_decks.items() if len(card_ids) > 0]
 
     def get_cards_data(self):
         '''
@@ -96,7 +100,34 @@ class ClashRoyaleAPI():
         div_cards_grid = div_cards_segment.find("div", { "class" : "card_grid__cards_container isotope_grid " })
         div_cards = div_cards_grid.find_all("div", { "class" : "grid_item " })
 
-        return [Card(card, idx) for idx, card in enumerate(div_cards)]
+        return [Card.from_card_statistics(card, idx) for idx, card in enumerate(div_cards)]
+    
+    def store_player_decks(self, file_name: str):
+        '''
+        Method writes the players decks into a JSON file.
+
+        Parameters:
+        file_name - name of the file in which the data is to be stored
+        '''
+        decks = self.get_top_players_decks()
+        json_str = json.dumps(decks, default = lambda x: x.__dict__)
+
+        with open(get_file_path(file_name), 'w') as file:
+            file.write(json_str)
+
+    def read_player_decks(self, file_name: str):
+        '''
+        Method reads the players decks from a JSON file.
+
+        Parameters:
+        file_name - name of the file in which the data is to be stored
+        '''
+        with open(get_file_path(file_name), 'r') as file:
+            file_data = file.read()
+            json_data = json.loads(file_data)
+            decks = [Deck(**deck) for deck in json_data]
+            
+            return decks
     
     def handle_request(self, request: ApiRequests, arg: str):
         '''
@@ -113,3 +144,30 @@ class ClashRoyaleAPI():
         else:
             print('Error while retrieving the data:')
             print(response.json()) 
+
+    def get_adjacency_matrix_for_decks(self, decks: List[Deck]):
+        '''
+        Method returns an adjacency matrix based on given decks' cards.
+
+        Parameters:
+        decks - decks for which matrix is created
+        '''
+        matrix_size = len(self.cards)
+        matrix = np.zeros((matrix_size, matrix_size))
+
+        for deck in decks:
+            cards = [card.id for card in deck.cards]
+            card_pairs = list(it.combinations(cards, 2))
+
+            for pair in card_pairs:
+                matrix[pair[0], pair[1]] += 1
+                matrix[pair[1], pair[0]] += 1
+
+        print(matrix)
+        return matrix
+
+if __name__ == '__main__':
+    api = ClashRoyaleAPI()
+    decks = api.read_player_decks('test.json')
+    adj_matrix = api.get_adjacency_matrix_for_decks(decks)
+    # api.store_player_decks('test.json')
