@@ -26,26 +26,30 @@ def test_model(model, test_decks, ):
     
 def train_model(model, optimizer, training_decks, test_decks, weights):
     loss = 0
+    ranking_encodings = get_ranking_vectors()
+    test_model(model, training_decks)
     for t in range(EPOCHS):
         for deck in training_decks:
             deck_encoding = deck.one_hot_deck()
             ranking_encoding = deck.one_hot_ranking()
             cards_remaining_aggregated_data, card_removed_encoding = deck.split(weights)
             # Forward pass
-            deck_ranking_diff, cards_diff = model(tfn(deck_encoding), 
+            deck_ranking_diff, cards_diff, bucket = model(tfn(deck_encoding), 
                                                 tfn(ranking_encoding), 
                                                 tfn(cards_remaining_aggregated_data), 
-                                                tfn(card_removed_encoding))
+                                                tfn(card_removed_encoding),
+                                                tfn(ranking_encodings))
             # Compute and print loss
-            loss = model.compute_loss(deck_ranking_diff, cards_diff)
+            target_bucket = deck.rank//(MAX_RANKING//NR_OF_BUCKETS)
+            loss = model.compute_loss(deck_ranking_diff, cards_diff, bucket, target_bucket)
             # Zero gradients, perform a backward pass, and update the weights.
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
         if t % 10 == 9:
-            print(f"Epoch: {t}, MSE loss: {loss.item()}")
-            test_model(model, test_decks)
+            print(f"Epoch: {t}, Loss: {loss.item()}")
+            test_model(model, training_decks)
 
     print(f'Result: {loss}')
     test_model(model, test_decks)

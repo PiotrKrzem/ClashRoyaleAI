@@ -42,7 +42,7 @@ class ClashRoyaleNet(torch.nn.Module):
         self.loss = torch.nn.MSELoss()
         self.loss_target = torch.zeros((1, self.encoding_size))
 
-    def forward(self, deck_encoding: torch.Tensor, ranking_encoding: torch.Tensor, cards_remaining_aggregated_data: torch.Tensor, card_removed_encoding: torch.Tensor):
+    def forward(self, deck_encoding: torch.Tensor, ranking_encoding: torch.Tensor, cards_remaining_aggregated_data: torch.Tensor, card_removed_encoding: torch.Tensor, bucket_encoding: torch.Tensor):
         """
         Inputs:
             cards - Tensor of shape (b, nr_of_cards_per_deck), where last dimension is a list of int indices of cards in the deck
@@ -64,10 +64,17 @@ class ClashRoyaleNet(torch.nn.Module):
         card_removed_output_encoding = self.encoding_layer(card_removed_encoding)
         cards_diff = aggregated_data_output_encoding - card_removed_output_encoding
 
-        return deck_ranking_diff, cards_diff
+        bucket_output_encoding = self.encoding_layer(bucket_encoding)
+        bucket_output_encoding = bucket_output_encoding - deck_output_encoding
+        bucket_output_encoding = bucket_output_encoding * bucket_output_encoding
+        bucket_output_encoding = torch.sum(bucket_output_encoding, -1)
+        distances = torch.sqrt(bucket_output_encoding)
+        bucket = torch.argmax(distances)
 
-    def compute_loss(self, deck_ranking_diff, cards_diff):
-        return self.loss(deck_ranking_diff, self.loss_target) + self.loss(cards_diff, self.loss_target)
+        return deck_ranking_diff, cards_diff, bucket
+
+    def compute_loss(self, deck_ranking_diff, cards_diff, bucket, target_bucket):
+        return 1e5*(self.loss(deck_ranking_diff, self.loss_target) + self.loss(cards_diff, self.loss_target)) + torch.abs(bucket - target_bucket)/self.nr_of_ranking_buckes
 
     def get_encoding(self, card_idx):
         card_encoding: torch.Tensor = self.encoding_layer.weight[:, card_idx]
