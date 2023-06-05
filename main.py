@@ -59,5 +59,5 @@ def train_model(model, optimizer, training_decks, test_decks, weights):
     plot_loss_accuracy(losses, accuracies)
 
 model, optimizer = get_model_with_optimizer()
-training_decks, test_decks, cards, weights = get_training_testing_data()
+training_decks, test_decks, cards, weights = get_training_testing_data(adj_matrix_off=True)
 train_model(model, optimizer, training_decks, test_decks, weights)

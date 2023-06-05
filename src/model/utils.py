@@ -22,11 +22,13 @@ def draw_adj_matrix_graph(adj_matrix, threshold:int = 1):
     plt.show()
 
 
-def get_training_testing_data(test_percentage = 0.1):
+def get_training_testing_data(test_percentage = 0.1, adj_matrix_off = False):
     api = ClashRoyaleAPI()
     decks = api.read_player_decks("big_cards_data.json")
     adj_matrix = api.get_adjacency_matrix_for_decks(decks)
     adj_matrix = adj_matrix / adj_matrix.max()
+    if adj_matrix_off:
+        adj_matrix = np.ones((adj_matrix.shape[0], adj_matrix.shape[0]))
 
     training_decks = []
     testing_decks = []
