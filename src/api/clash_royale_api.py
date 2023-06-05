@@ -1,16 +1,17 @@
 import urllib.request as rq
-import itertools as it
 import numpy as np
+import itertools as it
 import json
 
 from bs4 import BeautifulSoup
 from enum import Enum
 from typing import Any, List
 from requests import get
-from card import Card
-from deck import Deck, filter_duplicated_decks
-from data.api_constants import API_TOKEN, STATS_API_URL, API_URL, MAX_PLAYERS, MAX_CARDS, SEASON
-from data.data_parser import get_file_path
+
+from src.api.card import Card
+from src.data.data_parser import get_file_path
+from src.api.deck import Deck, filter_duplicated_decks
+from src.constants import API_TOKEN, STATS_API_URL, API_URL, MAX_PLAYERS, MAX_CARDS, SEASON
 
 # ----------------------- INLINE METHODS --------------------------------
 GET_PLAYER_ID = lambda player: player['tag'].replace('#', '%23')
@@ -90,15 +91,15 @@ class ClashRoyaleAPI():
         api_cr.close()
 
         # read html tree
-        soup = BeautifulSoup(data, features="xml")
+        soup = BeautifulSoup(data, features="lxml")
 
         # parse webpage to get ranking data
         div_container = soup.find("div", id = "page_content_container")
         div_content = div_container.find("div", id = "page_content")
         div_cards_container = div_content.find("div", { "class" : "ui container sidemargin0 popular_cards__container" })
         div_cards_segment = div_cards_container.find("div", { "class" : "ui attached segment" })
-        div_cards_grid = div_cards_segment.find("div", { "class" : "card_grid__cards_container isotope_grid " })
-        div_cards = div_cards_grid.find_all("div", { "class" : "grid_item " })
+        div_cards_grid = div_cards_segment.find("div", { "class" : "card_grid__cards_container isotope_grid" })
+        div_cards = div_cards_grid.find_all("div", { "class" : "grid_item" })
 
         return [Card.from_card_statistics(card, idx) for idx, card in enumerate(div_cards)]
     

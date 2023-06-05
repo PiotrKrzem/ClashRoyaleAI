@@ -10,3 +10,17 @@ API_TOKEN = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiIsImtpZCI6IjI4YTMxOGY3LTAwMDAtYTF
 SEASON = '2023-03'
 MAX_PLAYERS = 1000
 MAX_CARDS = 100
+
+# ------------------------------------------------------
+
+NR_OF_CARDS = 109
+NR_OF_BUCKETS = 10
+NR_OF_CARDS_PER_DECK = 8
+CARD_ENCODING_SIZE = 11 # wr, use, type (tr/sp/bu), cost, rarity (comm, rare, epic, leg, ch)
+MAX_RANKING = 1000
+
+ENCODER_DIM = 16
+DENSE_NEURONS = 128
+LEARNING_RATE = 1e-4
+
+EPOCHS = 1000

@@ -4,3 +4,5 @@ torchaudio
 matplotlib
 requests
 bs4
+lxml
+tensorboard
