@@ -5,28 +5,20 @@ import numpy as np
 from src.constants import *
 from src.api.clash_royale_api import ClashRoyaleAPI
 
-def draw_adj_matrix_graph(threshold:int = 1):
-    threshold_matrix = adj_matrix >= threshold
-    adj_matrix = adj_matrix * threshold_matrix
+def draw_adj_matrix_graph(adj_matrix, threshold:int = 1):
+    # threshold_matrix = adj_matrix >= threshold
+    # adj_matrix = adj_matrix * threshold_matrix
 
-    nx_graph = nx.from_numpy_array(adj_matrix)
+    nx_graph = nx.from_numpy_array(np.round(adj_matrix, 3))
     graph_dict = nx.spring_layout(
-        nx_graph, 
-        k = 0.1, 
-        iterations = 50
+        nx_graph
     )
     plt.figure()
-    nx.draw_networkx(
+    nx.draw(
         nx_graph, 
-        graph_dict, 
-        ax = plt.axes(),
-        font_size=6, 
-        node_color='#A0CBE2', 
-        edge_color='#BB0000', 
-        width=0.2,
-        node_size=20, 
-        with_labels=True,
+        graph_dict
     )
+    nx.draw_networkx_edge_labels(nx_graph, pos=graph_dict)
     plt.show()
 
 
@@ -62,3 +54,20 @@ def compute_distances(deck_embedding: np.ndarray, ranking_embeddings: np.ndarray
     distance = np.sqrt(distance)
     bucket = np.argmax(distance)
     return bucket
+
+
+def plot_loss_accuracy(losses, accuracies):
+    plt.figure()
+
+    plt.plot(range(len(losses)), losses)
+    plt.title("Loss per Batch")
+    plt.ylabel("Loss")
+    plt.xlabel("Batch")
+
+    plt.figure()
+    plt.plot(range(len(accuracies)), accuracies)
+    plt.title("Accuracy per Epoch")
+    plt.ylabel("Accuracy")
+    plt.xlabel("Epoch")
+
+    plt.show(block = True)

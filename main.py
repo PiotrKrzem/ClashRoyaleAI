@@ -2,13 +2,13 @@ import torch
 import torch.nn.functional as F
 
 from src.model.model import get_model_with_optimizer
-from src.model.utils import get_training_testing_data, get_ranking_vectors, compute_distances
+from src.model.utils import get_training_testing_data, get_ranking_vectors, compute_distances, plot_loss_accuracy, draw_adj_matrix_graph
 from src.constants import *
 
 def tfn(mtx):
     return torch.from_numpy(mtx)
 
-def test_model(model, test_decks, ):
+def test_model(model, test_decks, out = True):
     ranking_encodings = get_ranking_vectors()
     ranking_embeddings = model.predict(tfn(ranking_encodings))
     total_predictions = 0
@@ -22,12 +22,15 @@ def test_model(model, test_decks, ):
         if predicted_bucket in [target_bucket, target_bucket - 1, target_bucket + 1]:
             correct_predictions += 1
         total_predictions += 1
-    print(f"Test accuracy: {correct_predictions}/{total_predictions} ({correct_predictions/total_predictions})")
+    if out: print(f"Test accuracy: {correct_predictions}/{total_predictions} ({correct_predictions/total_predictions})")
+    return correct_predictions/total_predictions
     
 def train_model(model, optimizer, training_decks, test_decks, weights):
-    loss = 0
+    losses = []
+    accuracies = []
     ranking_encodings = get_ranking_vectors()
     test_model(model, training_decks)
+    loss = 0
     for t in range(EPOCHS):
         for deck in training_decks:
             deck_encoding = deck.one_hot_deck()
@@ -47,12 +50,13 @@ def train_model(model, optimizer, training_decks, test_decks, weights):
             loss.backward()
             optimizer.step()
 
-        if t % 10 == 9:
-            print(f"Epoch: {t}, Loss: {loss.item()}")
-            test_model(model, training_decks)
+        accuracies.append(test_model(model, training_decks, False))
+        losses.append(loss.item())
+        print(f"Epoch: {t}, Loss: {losses[-1]}, Accuracy: {accuracies[-1]}")
 
     print(f'Result: {loss}')
     test_model(model, test_decks)
+    plot_loss_accuracy(losses, accuracies)
 
 model, optimizer = get_model_with_optimizer()
 training_decks, test_decks, cards, weights = get_training_testing_data()

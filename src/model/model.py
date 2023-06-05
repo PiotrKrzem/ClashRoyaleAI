@@ -74,7 +74,7 @@ class ClashRoyaleNet(torch.nn.Module):
         return deck_ranking_diff, cards_diff, bucket
 
     def compute_loss(self, deck_ranking_diff, cards_diff, bucket, target_bucket):
-        return 1e5*(self.loss(deck_ranking_diff, self.loss_target) + self.loss(cards_diff, self.loss_target)) + torch.abs(bucket - target_bucket)/self.nr_of_ranking_buckes
+        return 1e3*(self.loss(deck_ranking_diff, self.loss_target) + self.loss(cards_diff, self.loss_target)) + torch.abs(bucket - target_bucket)/self.nr_of_ranking_buckes
 
     def get_encoding(self, card_idx):
         card_encoding: torch.Tensor = self.encoding_layer.weight[:, card_idx]
