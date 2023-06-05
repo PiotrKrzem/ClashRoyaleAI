@@ -35,7 +35,6 @@ def get_training_testing_data(test_percentage = 0.1):
     decks = api.read_player_decks("big_cards_data.json")
     adj_matrix = api.get_adjacency_matrix_for_decks(decks)
     adj_matrix = adj_matrix / adj_matrix.max()
-    adj_matrix = np.ones((len(decks), len(decks)))
 
     training_decks = []
     testing_decks = []
